@@ -1,0 +1,93 @@
+# ==========================================
+# 1. Environment & Confidential Secrets
+# ==========================================
+# Ignore all environment variable files containing database URLs, API keys, and secrets
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
+.env.staging
+
+# Never commit credentials, pem keys, or certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+secrets/
+
+# Do NOT ignore the environment example template
+!.env.example
+
+# ==========================================
+# 2. Dependencies
+# ==========================================
+node_modules/
+.pnp
+.pnp.js
+
+# ==========================================
+# 3. Next.js Build Outputs & Cache
+# ==========================================
+.next/
+out/
+build/
+dist/
+
+# ==========================================
+# 4. Logs & Diagnostics
+# ==========================================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# 5. TypeScript & Cache
+# ==========================================
+*.tsbuildinfo
+next-env.d.ts
+
+# ==========================================
+# 6. IDEs & Editors
+# ==========================================
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==========================================
+# 7. Operating System Artifacts
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# 8. Hosting & Cloud Deployments
+# ==========================================
+.vercel/
+.turbo/
+
+# ==========================================
+# 9. Local Database Dumps & SQLite
+# ==========================================
+*.sqlite
+*.sqlite3
+*.db
+*.sql.gz
+*.dump

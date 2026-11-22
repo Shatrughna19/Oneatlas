@@ -1,0 +1,112 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Lab {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  websiteUrl  String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  models      Model[]
+
+  @@map("labs")
+}
+
+model Model {
+  id                        String         @id @default(cuid())
+  name                      String
+  slug                      String         @unique
+  description               String?        @db.Text
+  modelType                 String         @default("chat") // "chat" | "reasoning" | "code" | "multimodal" | "embedding"
+  modality                  String         @default("text->text")
+  inputModalities           String[]       @default(["text"])
+  outputModalities          String[]       @default(["text"])
+  contextLength             Int?
+  maxCompletionTokens       Int?
+  tokenizer                 String?
+  supportsTools             Boolean        @default(false)
+  supportsVision            Boolean        @default(false)
+  supportsReasoning         Boolean        @default(false)
+  supportsStructuredOutputs Boolean        @default(false)
+  releaseDate               DateTime?
+  status                    String         @default("active") // "active" | "deprecated"
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+
+  labId                     String?
+  lab                       Lab?           @relation(fields: [labId], references: [id], onDelete: SetNull)
+
+  pricings                  ModelPricing[]
+  benchmark                 Benchmark?
+
+  @@index([name])
+  @@index([modelType])
+  @@index([contextLength])
+  @@index([labId])
+  @@map("models")
+}
+
+model Benchmark {
+  id                String   @id @default(cuid())
+  modelId           String   @unique
+  model             Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  intelligenceIndex Float?   // Composite Artificial Analysis intelligence score (0-100)
+  codingIndex       Float?   // Coding benchmark score (0-100)
+  agenticIndex      Float?   // Agentic benchmark score (0-100)
+  mathIndex         Float?   // Math & reasoning score (0-100)
+  arenaElo          Float?   // LMSYS / Arena rating (e.g. 1200-1400)
+  source            String   @default("artificial_analysis")
+  updatedAt         DateTime @updatedAt
+
+  @@index([intelligenceIndex])
+  @@index([codingIndex])
+  @@map("benchmarks")
+}
+
+model Provider {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  slug        String         @unique
+  description String?        @db.Text
+  websiteUrl  String?
+  status      String         @default("operational") // "operational" | "degraded"
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  pricings    ModelPricing[]
+
+  @@map("providers")
+}
+
+model ModelPricing {
+  id                   String   @id @default(cuid())
+  modelId              String
+  providerId           String
+  promptPrice          Float    // Cost per token (USD)
+  completionPrice      Float    // Cost per token (USD)
+  promptPerMillion     Float    // Pre-computed USD per 1M tokens
+  completionPerMillion Float    // Pre-computed USD per 1M tokens
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  model                Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  provider             Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([modelId, providerId])
+  @@index([modelId])
+  @@index([providerId])
+  @@index([promptPerMillion])
+  @@map("model_pricing")
+}
