@@ -15,6 +15,8 @@ interface FilterBarProps {
   onFilterVisionChange: (val: boolean) => void;
   filterReasoning: boolean;
   onFilterReasoningChange: (val: boolean) => void;
+  viewMode: "grid" | "table";
+  onViewModeChange: (val: "grid" | "table") => void;
   onResetFilters: () => void;
 }
 
@@ -25,14 +27,14 @@ export function FilterBar({
   onTypeChange,
   sortBy,
   onSortByChange,
-  sortOrder,
-  onSortOrderChange,
   filterTools,
   onFilterToolsChange,
   filterVision,
   onFilterVisionChange,
   filterReasoning,
   onFilterReasoningChange,
+  viewMode,
+  onViewModeChange,
   onResetFilters,
 }: FilterBarProps) {
   const isFiltering =
@@ -42,129 +44,144 @@ export function FilterBar({
     filterVision ||
     filterReasoning;
 
+  const categories = [
+    { label: "All Models", value: "" },
+    { label: "Reasoning", value: "reasoning" },
+    { label: "Vision", value: "multimodal" },
+    { label: "Code", value: "code" },
+    { label: "Chat", value: "chat" },
+  ];
+
   return (
-    <section className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div>
-          <label
-            htmlFor="search-models-input"
-            className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1"
-          >
-            Search Models / Labs
-          </label>
-          <input
-            id="search-models-input"
-            type="text"
-            placeholder="Search by name, slug, lab, or keywords..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="filter-model-type"
-            className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1"
-          >
-            Model Category
-          </label>
-          <select
-            id="filter-model-type"
-            value={selectedType}
-            onChange={(e) => onTypeChange(e.target.value)}
-            className="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
-          >
-            <option value="">All Categories</option>
-            <option value="chat">Chat / Conversational</option>
-            <option value="reasoning">Reasoning / Thinking</option>
-            <option value="code">Code Specialists</option>
-            <option value="multimodal">Multimodal / Vision</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor="sort-attribute-select"
-            className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1"
-          >
-            Sort Attribute
-          </label>
-          <select
-            id="sort-attribute-select"
-            value={sortBy}
-            onChange={(e) => onSortByChange(e.target.value)}
-            className="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
-          >
-            <option value="intelligence">Intelligence Index (Highest)</option>
-            <option value="price">Pricing ($ / 1M Tokens)</option>
-            <option value="context">Context Window (Tokens)</option>
-            <option value="releasedate">Release Date</option>
-            <option value="name">Alphabetical</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor="sort-direction-select"
-            className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1"
-          >
-            Sort Direction
-          </label>
-          <select
-            id="sort-direction-select"
-            value={sortOrder}
-            onChange={(e) => onSortOrderChange(e.target.value as "asc" | "desc")}
-            className="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
-          >
-            <option value="desc">Descending (High to Low)</option>
-            <option value="asc">Ascending (Low to High)</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Capability Toggles */}
-      <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-slate-100 text-xs">
-        <span className="font-semibold text-slate-600">Filter Capabilities:</span>
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={filterTools}
-            onChange={(e) => onFilterToolsChange(e.target.checked)}
-            className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-          />
-          <span>Function Calling / Tools</span>
-        </label>
-
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={filterVision}
-            onChange={(e) => onFilterVisionChange(e.target.checked)}
-            className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-          />
-          <span>Vision / Multimodal</span>
-        </label>
-
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={filterReasoning}
-            onChange={(e) => onFilterReasoningChange(e.target.checked)}
-            className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-          />
-          <span>Reasoning / Thinking</span>
-        </label>
-
-        {isFiltering && (
+    <div className="space-y-4">
+      {/* 1. Main Search Bar */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search 470+ models by name, creator lab (e.g. OpenAI, Anthropic), or keywords..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full text-sm pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm placeholder:text-slate-400 transition-all"
+        />
+        {search && (
           <button
-            onClick={onResetFilters}
-            className="ml-auto text-indigo-600 hover:text-indigo-800 font-medium underline cursor-pointer"
+            onClick={() => onSearchChange("")}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1.5 py-0.5 rounded cursor-pointer"
           >
-            Reset Filters
+            ✕
           </button>
         )}
       </div>
-    </section>
+
+      {/* 2. Category Pills & Actions Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Category Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          {categories.map((cat) => {
+            const isActive = selectedType === cat.value;
+            return (
+              <button
+                key={cat.label}
+                onClick={() => onTypeChange(cat.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  isActive
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
+
+          <span className="text-slate-300 mx-1">|</span>
+
+          {/* Quick Capability Toggles */}
+          <button
+            onClick={() => onFilterToolsChange(!filterTools)}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              filterTools
+                ? "bg-emerald-600 text-white"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            Tools {filterTools ? "✓" : ""}
+          </button>
+
+          <button
+            onClick={() => onFilterVisionChange(!filterVision)}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              filterVision
+                ? "bg-blue-600 text-white"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            Vision {filterVision ? "✓" : ""}
+          </button>
+
+          <button
+            onClick={() => onFilterReasoningChange(!filterReasoning)}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              filterReasoning
+                ? "bg-purple-600 text-white"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            Thinking {filterReasoning ? "✓" : ""}
+          </button>
+        </div>
+
+        {/* Right side controls: Sort & View Mode */}
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          {/* Clean Sort Dropdown */}
+          <select
+            value={sortBy}
+            onChange={(e) => onSortByChange(e.target.value)}
+            className="text-xs px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+          >
+            <option value="intelligence">Highest Intelligence</option>
+            <option value="price">Lowest Price</option>
+            <option value="context">Largest Context</option>
+            <option value="releasedate">Newest Release</option>
+            <option value="name">Alphabetical</option>
+          </select>
+
+          {/* View Mode Toggle: Grid vs Table */}
+          <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
+            <button
+              onClick={() => onViewModeChange("grid")}
+              className={`px-2.5 py-1 rounded text-xs font-medium cursor-pointer transition-colors ${
+                viewMode === "grid"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Grid View"
+            >
+              Grid
+            </button>
+            <button
+              onClick={() => onViewModeChange("table")}
+              className={`px-2.5 py-1 rounded text-xs font-medium cursor-pointer transition-colors ${
+                viewMode === "table"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Table View"
+            >
+              List
+            </button>
+          </div>
+
+          {isFiltering && (
+            <button
+              onClick={onResetFilters}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium underline cursor-pointer ml-1"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

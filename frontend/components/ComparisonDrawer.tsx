@@ -18,41 +18,42 @@ export function ComparisonDrawer({
   if (selectedCount === 0) return null;
 
   return (
-    <section className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm transition-all">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-indigo-800 bg-indigo-200 px-2 py-0.5 rounded">
-            Comparison Lab ({selectedCount}/4)
-          </span>
-          <p className="text-sm text-indigo-900 font-medium">
-            {selectedCount < 2
-              ? "Select at least one more model to enable side-by-side comparison"
-              : "Ready for comparison! Click Compare to run full multi-dimensional evaluation."}
-          </p>
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-xl px-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
+      <div className="bg-slate-900 text-white rounded-2xl p-3.5 shadow-xl border border-slate-700/80 backdrop-blur-md flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5 pl-2">
+          <span className="flex h-2 w-2 rounded-full bg-indigo-400 animate-ping" />
+          <div>
+            <div className="text-xs font-semibold">
+              {selectedCount} model{selectedCount > 1 ? "s" : ""} selected
+            </div>
+            <div className="text-[11px] text-slate-400">
+              {selectedCount < 2 ? "Select at least 1 more to compare" : "Ready for comparison"}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={onCompare}
-            disabled={selectedCount < 2 || loading}
-            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 rounded-lg shadow-sm transition-colors cursor-pointer"
+            onClick={onClear}
+            className="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
           >
-            {loading ? "Analyzing..." : `Compare ${selectedCount} Models`}
+            Clear
           </button>
           <button
-            onClick={onClear}
-            className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 cursor-pointer"
+            onClick={onCompare}
+            disabled={selectedCount < 2 || loading}
+            className="text-xs font-semibold px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-xl shadow-sm transition-all cursor-pointer"
           >
-            Clear Selection
+            {loading ? "Comparing..." : "Compare Now →"}
           </button>
         </div>
       </div>
 
       {errorMessage && (
-        <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-md border border-red-200">
+        <div className="mt-2 text-center text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 shadow-sm">
           {errorMessage}
         </div>
       )}
-    </section>
+    </div>
   );
 }

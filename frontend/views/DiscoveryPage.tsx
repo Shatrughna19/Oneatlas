@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { Header } from "@/frontend/components/Header";
 import { FilterBar } from "@/frontend/components/FilterBar";
+import { ModelCard } from "@/frontend/components/ModelCard";
+import { ModelTable } from "@/frontend/components/ModelTable";
 import { ComparisonDrawer } from "@/frontend/components/ComparisonDrawer";
 import { ComparisonView } from "@/frontend/components/ComparisonView";
-import { ModelTable } from "@/frontend/components/ModelTable";
 import { ModelItem, ProviderItem, ComparisonResult } from "@/frontend/types";
 
 export function DiscoveryPage() {
@@ -21,6 +22,9 @@ export function DiscoveryPage() {
   const [filterVision, setFilterVision] = useState(false);
   const [filterReasoning, setFilterReasoning] = useState(false);
 
+  // View mode: Grid of cards (default, cleaner) vs List table
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+
   // Pagination state
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -35,7 +39,7 @@ export function DiscoveryPage() {
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [comparisonError, setComparisonError] = useState<string | null>(null);
 
-  // Load providers on mount
+  // Load providers count on mount
   useEffect(() => {
     async function loadProviders() {
       try {
@@ -51,7 +55,7 @@ export function DiscoveryPage() {
     loadProviders();
   }, []);
 
-  // Fetch models on filter change
+  // Fetch models with debouncing
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchModels();
@@ -69,7 +73,7 @@ export function DiscoveryPage() {
       if (sortBy) params.set("sortBy", sortBy);
       if (sortOrder) params.set("sortOrder", sortOrder);
       params.set("page", String(page));
-      params.set("limit", "20");
+      params.set("limit", "24");
 
       const caps: string[] = [];
       if (filterTools) caps.push("tools");
@@ -136,83 +140,148 @@ export function DiscoveryPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
+      {/* 1. Clean Header */}
       <Header
         totalCount={totalCount}
         providersCount={providers.length}
-        currentPage={page}
-        totalPages={totalPages}
       />
 
+      {/* 2. Main Content Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* 3. Search and Category Filter Bar */}
+        <FilterBar
+          search={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setPage(1);
+          }}
+          selectedType={selectedType}
+          onTypeChange={(val) => {
+            setSelectedType(val);
+            setPage(1);
+          }}
+          sortBy={sortBy}
+          onSortByChange={(val) => {
+            setSortBy(val);
+            setPage(1);
+          }}
+          sortOrder={sortOrder}
+          onSortOrderChange={(val) => {
+            setSortOrder(val);
+            setPage(1);
+          }}
+          filterTools={filterTools}
+          onFilterToolsChange={(val) => {
+            setFilterTools(val);
+            setPage(1);
+          }}
+          filterVision={filterVision}
+          onFilterVisionChange={(val) => {
+            setFilterVision(val);
+            setPage(1);
+          }}
+          filterReasoning={filterReasoning}
+          onFilterReasoningChange={(val) => {
+            setFilterReasoning(val);
+            setPage(1);
+          }}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onResetFilters={handleResetFilters}
+        />
+
+        {/* 4. Models View: Clean Grid or Clean Table */}
+        {viewMode === "grid" ? (
+          <div>
+            {loading ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-20 text-center space-y-3">
+                <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-xs text-slate-500 font-medium">Loading foundation models...</p>
+              </div>
+            ) : error ? (
+              <div className="bg-white rounded-2xl border border-red-200 p-12 text-center space-y-2">
+                <p className="text-sm font-semibold text-red-600">Failed to load models</p>
+                <p className="text-xs text-slate-500">{error}</p>
+                <button
+                  onClick={fetchModels}
+                  className="mt-2 px-3 py-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-700 font-medium rounded-lg cursor-pointer"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : models.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-20 text-center space-y-2">
+                <p className="text-sm font-semibold text-slate-700">No models found</p>
+                <p className="text-xs text-slate-400">Try adjusting your search terms or category pills.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {models.map((model) => (
+                  <ModelCard
+                    key={model.id}
+                    model={model}
+                    isSelected={selectedModelIds.includes(model.id)}
+                    onToggleSelect={toggleModelSelection}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <ModelTable
+            models={models}
+            loading={loading}
+            error={error}
+            selectedModelIds={selectedModelIds}
+            onToggleSelection={toggleModelSelection}
+            onRetry={fetchModels}
+          />
+        )}
+
+        {/* 5. Minimal Pagination Bar */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 text-xs text-slate-500">
+            <div>
+              Showing page <strong className="text-slate-800">{page}</strong> of <strong className="text-slate-800">{totalPages}</strong> ({totalCount} total models)
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page <= 1}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                disabled={page >= totalPages}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* 6. Unobtrusive Floating Bottom Dock for Comparison */}
       <ComparisonDrawer
         selectedCount={selectedModelIds.length}
         loading={comparisonLoading}
         onCompare={handleCompare}
-        onClear={() => {
-          setSelectedModelIds([]);
-          setComparisonData(null);
-        }}
+        onClear={() => setSelectedModelIds([])}
         errorMessage={comparisonError}
       />
 
+      {/* 7. Focused Modal for Comparison */}
       {comparisonData && (
         <ComparisonView
           data={comparisonData}
           onClose={() => setComparisonData(null)}
         />
       )}
-
-      <FilterBar
-        search={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
-        selectedType={selectedType}
-        onTypeChange={(val) => {
-          setSelectedType(val);
-          setPage(1);
-        }}
-        sortBy={sortBy}
-        onSortByChange={(val) => {
-          setSortBy(val);
-          setPage(1);
-        }}
-        sortOrder={sortOrder}
-        onSortOrderChange={(val) => {
-          setSortOrder(val);
-          setPage(1);
-        }}
-        filterTools={filterTools}
-        onFilterToolsChange={(val) => {
-          setFilterTools(val);
-          setPage(1);
-        }}
-        filterVision={filterVision}
-        onFilterVisionChange={(val) => {
-          setFilterVision(val);
-          setPage(1);
-        }}
-        filterReasoning={filterReasoning}
-        onFilterReasoningChange={(val) => {
-          setFilterReasoning(val);
-          setPage(1);
-        }}
-        onResetFilters={handleResetFilters}
-      />
-
-      <ModelTable
-        models={models}
-        loading={loading}
-        error={error}
-        selectedModelIds={selectedModelIds}
-        onToggleSelection={toggleModelSelection}
-        page={page}
-        totalPages={totalPages}
-        totalCount={totalCount}
-        onPageChange={setPage}
-        onRetry={fetchModels}
-      />
     </div>
   );
 }
